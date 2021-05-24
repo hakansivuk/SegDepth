@@ -29,10 +29,16 @@ def export_gt_depths_kitti():
                         help='which split to export gt from',
                         required=True,
                         choices=["eigen", "eigen_benchmark"])
+    parser.add_argument('--test_file',
+                        type=str,
+                        help='which test file to export gt from',
+                        default="test_files.txt",
+                        choices=["test_files.txt", "test_files_example.txt"])
+
     opt = parser.parse_args()
 
     split_folder = os.path.join(os.path.dirname(__file__), "splits", opt.split)
-    lines = readlines(os.path.join(split_folder, "test_files.txt"))
+    lines = readlines(os.path.join(split_folder, opt.test_file))
 
     print("Exporting ground truth depths for {}".format(opt.split))
 

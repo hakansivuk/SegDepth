@@ -29,6 +29,8 @@ def parse_args():
 
     parser.add_argument('--image_path', type=str,
                         help='path to a test image or folder of images', required=True)
+    parser.add_argument('--model_path', type=str,
+                        help='path to a model', required=True)
     parser.add_argument('--model_name', type=str,
                         help='name of a pretrained model to use',
                         choices=[
@@ -62,8 +64,8 @@ def test_simple(args):
     else:
         device = torch.device("cpu")
 
-    download_model_if_doesnt_exist(args.model_name)
-    model_path = os.path.join("models", args.model_name)
+    #download_model_if_doesnt_exist(args.model_name)
+    model_path = args.model_path
     print("-> Loading model from ", model_path)
     encoder_path = os.path.join(model_path, "encoder.pth")
     depth_decoder_path = os.path.join(model_path, "depth.pth")

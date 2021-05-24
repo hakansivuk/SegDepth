@@ -131,7 +131,8 @@ class Trainer:
                          "kitti_odom": datasets.KITTIOdomDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
-        fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
+        files_txt = "{}_files_example.txt" if self.opt.example_run else "{}_files.txt"
+        fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, files_txt)
 
         train_filenames = readlines(fpath.format("train"))
         val_filenames = readlines(fpath.format("val"))

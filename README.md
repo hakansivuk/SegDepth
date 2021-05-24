@@ -2,40 +2,52 @@
 
 > **Segmentation-Guided Self-Supervised Monocular Depth Estimation**
 
-## Conda Environment
+In this project, semantic segmentation is used as a booster to the depth estimation task. Segmentation masks that separate foreground objects from background are created from full scale disparity maps through a U-net architecture. In addition to minimum reprojection loss and edge-aware smoothness loss, pixel-wise weighted cross entropy loss is used as an additional supervision signal.
 
-Follow the steps below:
-```shell
-conda create -n monodepth2 python=3.6.6
-conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
-pip install tensorboardX==1.4
-conda install opencv=3.3.1   # just needed for evaluation
-```
-## Prediction for a single image
+You can find the dataset (KITTI raw) [from this link](http://www.cvlibs.net/datasets/kitti/raw_data.php)
 
-You can predict depth for a single image with:
-```shell
-python test_simple.py --image_path assets/test_image.jpg --model_name mono+stereo_640x192
-```
+You can find the pretrained baseline and SegDepth network on KITTI raw subset dataset [from this link](https://drive.google.com/drive/folders/1PQ_gTVE3LQwF7aQKJzNpoUXCkgcvRfhD?usp=sharing)
 
-On its first run this will download the `mono+stereo_640x192` pretrained model (99MB) into the `models/` folder.
-We provide the following  options for `--model_name`:
-## Training data
+### Training Process
 
-I used subset of [raw KITTI dataset](http://www.cvlibs.net/datasets/kitti/raw_data.php). You can download this subset by typing the commands below:
-```shell
-wget -i splits/kitti_archives_to_download_subset.txt -P kitti_data/
-cd kitti_data
-unzip "*.zip"
-cd ..
-```
+I performed all experiments on NVIDIA Geforce 1050-TI
+Training baseline model on eigen_zhou_subset took 2.5 hours approximately.
+Training improved model on eigen_zhou_subset took 7 hours approximately.
 
 **Splits**
 
 I used subset of eigen_zhou split. You can find it under splits/ folder.
 You can also use other split by specifying which split do you want with `--split` flag.
 
-## Training
+## Instructions for Running Scripts
+In this section, necessary instructions to run scripts are described. Since downloading all the dataset is time consuming, you can skip to Toy Examples section to run with a very few samples.
+
+## 1) Download Dataset
+You can download training subset data by typing the commands below:
+```shell
+wget -i splits/kitti_archives_to_download_subset.txt -P kitti_data/
+cd kitti_data
+unzip "*.zip"
+cd ..
+```
+## 2) Creating Segmentation Masks
+For creating segmentation masks, create and use the conda environment specified below:
+```shell
+conda create -n csm python=3.6.6
+conda activate csm
+pip install torch torchvision
+pip install opencv-python
+pip install numpy
+python create_segmentation_masks.py
+```
+
+## 3) Training
+Follow the steps below:
+```shell
+conda create -n segdepth python=3.6.6
+conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
+conda install opencv=3.3.1
+```
 
 By default models are saved to `tmp/<model_name>`.
 This can be changed with the `--log_dir` flag.
@@ -44,26 +56,12 @@ This can be changed with the `--log_dir` flag.
 python train.py --model_name mono_model
 ```
 
-### Training Process
-
-I performed all experiments on ...
-Training baseline model on eigen_zhou_subset took 2.5 hours approximately.
-Training improved model on eigen_zhou_subset took 7 hours approximately.
-
-All our experiments were performed on a single NVIDIA Titan Xp.
-
-| Training modality | Approximate GPU memory  | Approximate training time   |
-|-------------------|-------------------------|-----------------------------|
-| Mono              | 9GB                     | 12 hours                    |
-| Stereo            | 6GB                     | 8 hours                     |
-| Mono + Stereo     | 11GB                    | 15 hours                    |
-
-### Other training options
-
-Run `python train.py -h` (or look at `options.py`) to see the range of other training options, such as learning rates and ablation settings.
-
-
-## Eigen split evaluation
+## 4) Prediction
+You can predict depth for a single image with (change model path according to your case):
+```shell
+python test_simple.py --image_path assets/test_image.jpg --model_name mono_model --model_path tmp/mono_model/models/weights_19/
+```
+## 5) Eigen split evaluation
 
 To prepare the ground truth depth maps run:
 ```shell
@@ -74,4 +72,23 @@ python export_gt_depth.py --data_path kitti_data --split eigen
 The following example command evaluates the epoch 19 weights of a model named `mono_model`:
 ```shell
 python evaluate_depth.py --load_weights_folder tmp/mono_model/models/weights_19/ --eval_mono
+```
+## Toy Examples
+In this section, you can run the scripts above with a very few data without any downloading process.
+
+## 1) Training
+```shell
+python train.py --model_name mono_model --example_run --batch_size 1
+```
+
+## 3) Eigen split evaluation
+To prepare the ground truth depth maps run:
+```shell
+python export_gt_depth.py --data_path kitti_data --split eigen --test_file test_files_example.txt
+```
+assuming that you have placed the KITTI dataset in the default location of `./kitti_data/`.
+
+The following example command evaluates the epoch 19 weights of a model named `mono_model`:
+```shell
+python evaluate_depth.py --load_weights_folder tmp/mono_model/models/weights_19/ --eval_mono --test_file test_files_example.txt
 ```

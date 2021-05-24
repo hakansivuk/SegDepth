@@ -27,6 +27,9 @@ class MonodepthOptions:
                                  default=os.path.join(file_dir, "tmp"))
 
         # TRAINING options
+        self.parser.add_argument("--example_run",
+                                 help="if set, trains with an example file)",
+                                 action="store_true")
         self.parser.add_argument("--model_name",
                                  type=str,
                                  help="the name of the folder to save the model in",
@@ -174,6 +177,12 @@ class MonodepthOptions:
                                  default=1)
 
         # EVALUATION options
+        self.parser.add_argument('--test_file',
+                                 type=str,
+                                 help='which test file to export gt from',
+                                 default="test_files.txt",
+                                 choices=["test_files.txt", "test_files_example.txt"])
+
         self.parser.add_argument("--eval_stereo",
                                  help="if set evaluates in stereo mode",
                                  action="store_true")
