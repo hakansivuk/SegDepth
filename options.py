@@ -34,8 +34,8 @@ class MonodepthOptions:
         self.parser.add_argument("--split",
                                  type=str,
                                  help="which training split to use",
-                                 choices=["eigen_zhou", "eigen_full", "odom", "benchmark"],
-                                 default="eigen_zhou")
+                                 choices=["eigen_zhou_subset", "eigen_zhou", "eigen_full", "odom", "benchmark"],
+                                 default="eigen_zhou_subset")
         self.parser.add_argument("--num_layers",
                                  type=int,
                                  help="number of resnet layers",
@@ -48,7 +48,8 @@ class MonodepthOptions:
                                  choices=["kitti", "kitti_odom", "kitti_depth", "kitti_test"])
         self.parser.add_argument("--png",
                                  help="if set, trains from raw KITTI png files (instead of jpgs)",
-                                 action="store_true")
+                                 default=True)
+                                 #action="store_true")
         self.parser.add_argument("--height",
                                  type=int,
                                  help="input image height",
@@ -64,7 +65,7 @@ class MonodepthOptions:
         self.parser.add_argument("--segmentation_term",
                                  type=float,
                                  help="segmentation loss weight",
-                                 default=1e-3)
+                                 default=5e-4)
         self.parser.add_argument("--scales",
                                  nargs="+",
                                  type=int,
@@ -99,7 +100,7 @@ class MonodepthOptions:
         self.parser.add_argument("--segmentation_learning_rate",
                                  type=float,
                                  help="learning rate",
-                                 default=1e-4)
+                                 default=1e-3)
 
         self.parser.add_argument("--num_epochs",
                                  type=int,
@@ -145,7 +146,8 @@ class MonodepthOptions:
         # SYSTEM options
         self.parser.add_argument("--no_cuda",
                                  help="if set disables CUDA",
-                                 action="store_true")
+                                 default=True)
+                                 #action="store_true")
         self.parser.add_argument("--num_workers",
                                  type=int,
                                  help="number of dataloader workers",

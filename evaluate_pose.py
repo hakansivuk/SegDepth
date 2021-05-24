@@ -69,15 +69,16 @@ def evaluate(opt):
     pose_encoder_path = os.path.join(opt.load_weights_folder, "pose_encoder.pth")
     pose_decoder_path = os.path.join(opt.load_weights_folder, "pose.pth")
 
+    device = torch.device('cpu') if opt.no_cuda else torch.device('cuda')
     pose_encoder = networks.ResnetEncoder(opt.num_layers, False, 2)
-    pose_encoder.load_state_dict(torch.load(pose_encoder_path))
+    pose_encoder.load_state_dict(torch.load(pose_encoder_path, map_location=device))
 
     pose_decoder = networks.PoseDecoder(pose_encoder.num_ch_enc, 1, 2)
-    pose_decoder.load_state_dict(torch.load(pose_decoder_path))
+    pose_decoder.load_state_dict(torch.load(pose_decoder_path, map_location=device))
 
-    pose_encoder.cuda()
+    #pose_encoder.cuda()
     pose_encoder.eval()
-    pose_decoder.cuda()
+    #pose_decoder.cuda()
     pose_decoder.eval()
 
     pred_poses = []
@@ -88,8 +89,9 @@ def evaluate(opt):
 
     with torch.no_grad():
         for inputs in dataloader:
-            for key, ipt in inputs.items():
-                inputs[key] = ipt.cuda()
+            if not opt.no_cuda:
+                for key, ipt in inputs.items():
+                    inputs[key] = ipt.cuda()
 
             all_color_aug = torch.cat([inputs[("color_aug", i, 0)] for i in opt.frame_ids], 1)
 

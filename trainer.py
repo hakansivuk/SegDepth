@@ -15,8 +15,6 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
-import torchvision
-from tensorboardX import SummaryWriter
 
 import json
 
@@ -156,10 +154,6 @@ class Trainer:
             pin_memory=True, drop_last=True)
         self.val_iter = iter(self.val_loader)
 
-        self.writers = {}
-        for mode in ["train", "val"]:
-            self.writers[mode] = SummaryWriter(os.path.join(self.log_path, mode))
-
         if not self.opt.no_ssim:
             self.ssim = SSIM()
             self.ssim.to(self.device)
@@ -245,7 +239,7 @@ class Trainer:
                 if "depth_gt" in inputs:
                     self.compute_depth_losses(inputs, outputs, losses)
 
-                self.log("train", inputs, outputs, losses)
+                #self.log("train", inputs, outputs, losses)
                 self.val()
 
             self.step += 1
@@ -363,7 +357,7 @@ class Trainer:
             print('Val:')
             for metric in self.depth_metric_names:
                 print(metric, losses[metric])
-            self.log("val", inputs, outputs, losses)
+            #self.log("val", inputs, outputs, losses)
             del inputs, outputs, losses
 
         self.set_train()
@@ -439,8 +433,7 @@ class Trainer:
         """
         losses = {}
         total_loss = 0
-        total_smooth_loss = 0
-        total_depth_loss = 0
+
         for scale in self.opt.scales:
             loss = 0
             reprojection_losses = []
@@ -486,8 +479,10 @@ class Trainer:
                 reprojection_losses *= mask
 
                 # add a loss pushing mask to 1 (using nn.BCELoss for stability)
-                #weighting_loss = 0.2 * nn.BCELoss()(mask, torch.ones(mask.shape).cuda())
-                weighting_loss = 0.2 * nn.BCELoss()(mask, torch.ones(mask.shape))
+                if not self.opt.no_cuda:
+                    weighting_loss = 0.2 * nn.BCELoss()(mask, torch.ones(mask.shape).cuda())
+                else:
+                    weighting_loss = 0.2 * nn.BCELoss()(mask, torch.ones(mask.shape))
                 loss += weighting_loss.mean()
 
             if self.opt.avg_reprojection:
@@ -497,9 +492,11 @@ class Trainer:
 
             if not self.opt.disable_automasking:
                 # add random numbers to break ties
-                """identity_reprojection_loss += torch.randn(
-                    identity_reprojection_loss.shape).cuda() * 0.00001"""
-                identity_reprojection_loss += torch.randn(
+                if not self.opt.no_cuda:
+                    identity_reprojection_loss += torch.randn(
+                    identity_reprojection_loss.shape).cuda() * 0.00001
+                else:
+                    identity_reprojection_loss += torch.randn(
                     identity_reprojection_loss.shape) * 0.00001
 
                 combined = torch.cat((identity_reprojection_loss, reprojection_loss), dim=1)
@@ -520,9 +517,7 @@ class Trainer:
             mean_disp = disp.mean(2, True).mean(3, True)
             norm_disp = disp / (mean_disp + 1e-7)
             smooth_loss = get_smooth_loss(norm_disp, color)
-            total_depth_loss += loss
             loss += self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
-            total_smooth_loss += self.opt.disparity_smoothness * smooth_loss / (2 ** scale)
             total_loss += loss
             losses["loss/{}".format(scale)] = loss
 
@@ -531,30 +526,22 @@ class Trainer:
                 losses["segmentation"] = segmentation_loss
 
         total_loss /= self.num_scales
-        total_smooth_loss /= self.num_scales
-        total_depth_loss /= self.num_scales
         total_loss += self.opt.segmentation_term * segmentation_loss
-        """print('smooth', total_smooth_loss)
-        print('depth', total_depth_loss)
-        print('segmentation', self.opt.segmentation_term * segmentation_loss)
-        print('total', total_loss)"""
         losses["loss"] = total_loss
         return losses
 
     def get_segmentation_loss(self, logits, target):
-        """print('Loss function: logits', logits.shape)
-        print('loss function: target', target.shape)"""
+        # https://discuss.pytorch.org/t/weighted-pixelwise-nllloss2d/7766
 
         # Initialize logits etc. with random
         dims = logits.shape
-        #print(dims)
+
         weights = torch.ones((dims[0], 1, dims[2], dims[3]))
 
         # Calculate log probabilities
         logp = F.log_softmax(logits, dim=1).cpu()
-        #print(logp.shape)
+
         # Gather log probabilities with respect to target
-        #print(target.shape)
         t_view = target.long().view(dims[0], 1, dims[2], dims[3])
         logp = logp.gather(1, t_view).cpu()
 
@@ -566,7 +553,6 @@ class Trainer:
 
         # Average over mini-batch
         weighted_loss = -1.0 * weighted_loss.mean()
-        #print('final segmentation loss', weighted_loss)
         return weighted_loss
 
     def compute_depth_losses(self, inputs, outputs, losses):
@@ -611,39 +597,6 @@ class Trainer:
         print(print_string.format(self.epoch, batch_idx, samples_per_sec, loss,
                                   sec_to_hm_str(time_sofar), sec_to_hm_str(training_time_left)))
 
-    def log(self, mode, inputs, outputs, losses):
-        """Write an event to the tensorboard events file
-        """
-        writer = self.writers[mode]
-        for l, v in losses.items():
-            writer.add_scalar("{}".format(l), v, self.step)
-
-        for j in range(min(4, self.opt.batch_size)):  # write a maxmimum of four images
-            for s in self.opt.scales:
-                for frame_id in self.opt.frame_ids:
-                    writer.add_image(
-                        "color_{}_{}/{}".format(frame_id, s, j),
-                        inputs[("color", frame_id, s)][j].data, self.step)
-                    if s == 0 and frame_id != 0:
-                        writer.add_image(
-                            "color_pred_{}_{}/{}".format(frame_id, s, j),
-                            outputs[("color", frame_id, s)][j].data, self.step)
-
-                writer.add_image(
-                    "disp_{}/{}".format(s, j),
-                    normalize_image(outputs[("disp", s)][j]), self.step)
-
-                if self.opt.predictive_mask:
-                    for f_idx, frame_id in enumerate(self.opt.frame_ids[1:]):
-                        writer.add_image(
-                            "predictive_mask_{}_{}/{}".format(frame_id, s, j),
-                            outputs["predictive_mask"][("disp", s)][j, f_idx][None, ...],
-                            self.step)
-
-                elif not self.opt.disable_automasking:
-                    writer.add_image(
-                        "automask_{}/{}".format(s, j),
-                        outputs["identity_selection/{}".format(s)][j][None, ...], self.step)
 
     def save_opts(self):
         """Save options to disk so we know what we ran this experiment with
@@ -691,7 +644,7 @@ class Trainer:
             print("Loading {} weights...".format(n))
             path = os.path.join(self.opt.load_weights_folder, "{}.pth".format(n))
             model_dict = self.models[n].state_dict()
-            pretrained_dict = torch.load(path)
+            pretrained_dict = torch.load(path, map_location=self.device)
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
             self.models[n].load_state_dict(model_dict)
@@ -700,7 +653,7 @@ class Trainer:
         optimizer_load_path = os.path.join(self.opt.load_weights_folder, "adam.pth")
         if os.path.isfile(optimizer_load_path):
             print("Loading Adam weights")
-            optimizer_dict = torch.load(optimizer_load_path)
+            optimizer_dict = torch.load(optimizer_load_path, map_location=self.device)
             self.model_optimizer.load_state_dict(optimizer_dict)
         else:
             print("Cannot find Adam weights so Adam is randomly initialized")
@@ -709,7 +662,7 @@ class Trainer:
         optimizer_load_path = os.path.join(self.opt.load_weights_folder, "adam_segmentation.pth")
         if os.path.isfile(optimizer_load_path):
             print("Loading Adam weights (segmentation)")
-            optimizer_dict = torch.load(optimizer_load_path)
+            optimizer_dict = torch.load(optimizer_load_path, map_location=self.device)
             self.segmentation_optimizer.load_state_dict(optimizer_dict)
         else:
             print("Cannot find Adam weights so Adam is randomly initialized")

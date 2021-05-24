@@ -45,7 +45,8 @@ def parse_args():
                         help='image extension to search for in folder', default="jpg")
     parser.add_argument("--no_cuda",
                         help='if set, disables CUDA',
-                        action='store_true')
+                        default=True)
+                        #action='store_true')
 
     return parser.parse_args()
 
