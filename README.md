@@ -81,7 +81,7 @@ In this section, you can run the scripts above with a very few data without any 
 python train.py --model_name mono_model --example_run --batch_size 1
 ```
 
-## 3) Eigen split evaluation
+## 2) Eigen split evaluation
 To prepare the ground truth depth maps run:
 ```shell
 python export_gt_depth.py --data_path kitti_data --split eigen --test_file test_files_example.txt
