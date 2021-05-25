@@ -4,7 +4,7 @@ import torchvision
 import numpy as np
 import torch
 import time
-
+#https://pytorch.org/vision/stable/models.html#semantic-segmentation
 def create_segmentation_masks(base_path):
     model = torchvision.models.segmentation.deeplabv3_mobilenet_v3_large(pretrained=True, progress=False)
     model.eval()
