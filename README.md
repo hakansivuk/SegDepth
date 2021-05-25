@@ -19,7 +19,10 @@ Training improved model on eigen_zhou_subset took 7 hours approximately.
 I used subset of eigen_zhou_subset split. You can find it under splits/ folder.
 
 ## Instructions for Running Scripts
-In this section, necessary instructions to run scripts are described. Since downloading all the dataset is time consuming, you can skip to Toy Examples section to run with a very few samples that are already in kitti_data folder.
+In this section, necessary instructions to run scripts are described. 
+
+**Warning**
+Before downloading the dataset (step 1), you will get an error if you try to run a script below. Since downloading all the dataset is time consuming, you can skip to Toy Examples section to run with a very few samples that are already in kitti_data folder without any error.
 
 ## 1) Download Dataset
 You can download training subset data by typing the commands below:

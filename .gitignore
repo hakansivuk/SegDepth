@@ -5,3 +5,4 @@ __pycache__
 *.npz
 models
 tmp
+.DS_Store
