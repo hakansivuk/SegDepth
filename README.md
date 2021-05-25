@@ -1,4 +1,4 @@
-# SedDepth
+# SegDepth
 
 > **Segmentation-Guided Self-Supervised Monocular Depth Estimation**
 
