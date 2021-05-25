@@ -44,6 +44,7 @@ python create_segmentation_masks.py
 Follow the steps below:
 ```shell
 conda create -n segdepth python=3.6.6
+conda activate segdepth
 conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
 conda install scikit-image
 conda install opencv=3.3.1
@@ -80,6 +81,7 @@ In this section, you can run the scripts above with a very few data without any 
 Follow the steps below:
 ```shell
 conda create -n segdepth python=3.6.6
+conda activate segdepth
 conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
 conda install scikit-image
 conda install opencv=3.3.1
