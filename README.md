@@ -46,6 +46,7 @@ Follow the steps below:
 ```shell
 conda create -n segdepth python=3.6.6
 conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
+conda install scikit-image
 conda install opencv=3.3.1
 ```
 
