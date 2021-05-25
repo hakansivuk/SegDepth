@@ -16,11 +16,10 @@ Training improved model on eigen_zhou_subset took 7 hours approximately.
 
 **Splits**
 
-I used subset of eigen_zhou split. You can find it under splits/ folder.
-You can also use other split by specifying which split do you want with `--split` flag.
+I used subset of eigen_zhou_subset split. You can find it under splits/ folder.
 
 ## Instructions for Running Scripts
-In this section, necessary instructions to run scripts are described. Since downloading all the dataset is time consuming, you can skip to Toy Examples section to run with a very few samples.
+In this section, necessary instructions to run scripts are described. Since downloading all the dataset is time consuming, you can skip to Toy Examples section to run with a very few samples that are already in kitti_data folder.
 
 ## 1) Download Dataset
 You can download training subset data by typing the commands below:
@@ -78,7 +77,12 @@ python evaluate_depth.py --load_weights_folder tmp/mono_model/models/weights_19/
 In this section, you can run the scripts above with a very few data without any downloading process.
 
 ## 1) Training
+Follow the steps below:
 ```shell
+conda create -n segdepth python=3.6.6
+conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
+conda install scikit-image
+conda install opencv=3.3.1
 python train.py --model_name mono_model --example_run --batch_size 1
 ```
 
