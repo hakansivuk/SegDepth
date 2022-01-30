@@ -2,7 +2,11 @@
 
 > **Segmentation-Guided Self-Supervised Monocular Depth Estimation**
 
-In this project, semantic segmentation is used as a booster to the depth estimation task. Segmentation masks that separate foreground objects from background are created from full scale disparity maps through a U-net architecture. In addition to minimum reprojection loss and edge-aware smoothness loss, pixel-wise weighted cross entropy loss is used as an additional supervision signal.
+In this project, semantic segmentation is used as a booster to the depth estimation task. Segmentation masks that separate foreground objects from background are created from full scale disparity maps through a U-net architecture. In addition to minimum reprojection loss and edge-aware smoothness loss, pixel-wise weighted cross entropy loss is used as an additional supervision signal. [Paper](https://github.com/hakansivuk/SegDepth/blob/master/SegDepth.pdf), [Presentation](https://github.com/hakansivuk/SegDepth/blob/master/Presentation.pdf)
+
+<p align="center">
+  <img src="./network.png" alt="Network" width="800" />
+</p>
 
 You can find the dataset (KITTI raw) [from this link](http://www.cvlibs.net/datasets/kitti/raw_data.php)
 
